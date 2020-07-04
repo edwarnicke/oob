@@ -21,8 +21,10 @@ package oob
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
+	"strconv"
 
 	"syscall"
 
@@ -120,4 +122,34 @@ func ToFd(thing interface{}) (uintptr, error) {
 		return file.Fd(), nil
 	}
 	return 0, errors.Errorf("cannot extract fd from %+v", thing)
+}
+
+// InodeToFile - given an inode, will return n *os.File if and only if the process already has an open fd for that inode
+func InodeToFile(inode uint64) *os.File {
+	fis, err := ioutil.ReadDir("/proc/self/fd/")
+	if err != nil {
+		return nil
+	}
+	for _, fi := range fis {
+		// You may be asking yourself... why not just use fi.Sys().(*syscall.Stat_t).Ino, nil
+		// The answer is because /proc/self/fd/${fd} is a *link* to the file, with its own distinct Inode
+		fd64, err := strconv.ParseUint(fi.Name(), 10, 64)
+		if err != nil {
+			return nil
+		}
+		fd := uintptr(fd64)
+		fdInode, err := ToInode(fd)
+		if err == nil && fdInode == inode {
+			return ToFile(fd)
+		}
+	}
+	return nil
+}
+
+// InodeToConn - given an inode, will return n net.Conn if and only if the process already has an open fd for that inode and its a connection socketd
+func InodeToConn(inode uint64) (net.Conn, error) {
+	if file := InodeToFile(inode); file != nil {
+		return net.FileConn(file)
+	}
+	return nil, errors.Errorf("No file found for inode %d", inode)
 }
