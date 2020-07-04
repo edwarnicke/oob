@@ -25,7 +25,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"syscall"
 	"time"
@@ -36,10 +35,10 @@ import (
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	conn, err := (&net.Dialer{}).DialContext(ctx, "unix", os.Args[1])
+	conn, err := (&oob.Dialer{}).DialContext(ctx, "unix", os.Args[1])
 	exitOnErr(err)
 	defer func() { _ = conn.Close() }()
-	o := oob.New(conn.(*net.UnixConn))
+	o := conn.(*oob.UnixConn)
 	for i := 0; i < 2; i++ {
 		file, err := ioutil.TempFile(os.TempDir(), "oob-file")
 		exitOnErr(err)
