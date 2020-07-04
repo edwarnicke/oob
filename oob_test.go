@@ -44,27 +44,29 @@ func TestUnixsocket_RecvFile(t *testing.T) {
 	dirname, err := ioutil.TempDir(os.TempDir(), "oob_test")
 	require.NoError(t, err)
 	socketfilename := filepath.Join(dirname, "socket")
-	listener, err := net.Listen("unix", socketfilename)
+	listener, err := oob.Listen("unix", socketfilename)
 	require.NoError(t, err)
 	ctx, cancel := context.WithCancel(context.Background())
 
 	err = exechelper.Run("go build .",
-		exechelper.WithDir("./testdata/sendfile"),
+		exechelper.WithDir("./internal/sendfile"),
 		exechelper.WithStdout(os.Stdout),
 		exechelper.WithStderr(os.Stderr),
+		exechelper.WithEnvirons(os.Environ()...),
 	)
 	require.NoError(t, err)
 	errCh := exechelper.Start("./sendfile",
 		exechelper.WithArgs(socketfilename),
-		exechelper.WithDir("./testdata/sendfile"),
+		exechelper.WithDir("./internal/sendfile"),
 		exechelper.WithStdout(os.Stdout),
 		exechelper.WithStderr(os.Stderr),
+		exechelper.WithEnvirons(os.Environ()...),
 		exechelper.WithContext(ctx),
 	)
 	conn, err := listener.Accept()
 	require.NoError(t, err)
 	defer func() { assert.NoError(t, conn.Close()) }()
-	o := oob.New(conn.(*net.UnixConn))
+	o := conn.(*oob.UnixConn)
 	for i := 0; i < 3; i++ {
 		fd, err := o.RecvFD()
 		// Only 2 file descriptors are sent, so on the third, we expect EINVAL
@@ -99,23 +101,25 @@ func TestUnixsocket_SendSocket(t *testing.T) {
 	dirname, err := ioutil.TempDir(os.TempDir(), "oob_test")
 	require.NoError(t, err)
 	socketfilename := filepath.Join(dirname, "socket")
-	listener, err := net.Listen("unix", socketfilename)
+	listener, err := oob.Listen("unix", socketfilename)
 	require.NoError(t, err)
 
 	// Build and run test binaries
 	err = exechelper.Run("go build .",
-		exechelper.WithDir("./testdata/recvsocket"),
+		exechelper.WithDir("./internal/recvsocket"),
 		exechelper.WithStdout(os.Stdout),
 		exechelper.WithStderr(os.Stderr),
+		exechelper.WithEnvirons(os.Environ()...),
 	)
 	require.NoError(t, err)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	errCh := exechelper.Start("./recvsocket",
 		exechelper.WithArgs(socketfilename),
-		exechelper.WithDir("./testdata/recvsocket"),
+		exechelper.WithDir("./internal/recvsocket"),
 		exechelper.WithStdout(os.Stdout),
 		exechelper.WithStderr(os.Stderr),
+		exechelper.WithEnvirons(os.Environ()...),
 		exechelper.WithContext(ctx),
 	)
 
@@ -123,7 +127,7 @@ func TestUnixsocket_SendSocket(t *testing.T) {
 	conn, err := listener.Accept()
 	require.NoError(t, err)
 	defer func() { assert.NoError(t, conn.Close()) }()
-	o := oob.New(conn.(*net.UnixConn))
+	o := conn.(*oob.UnixConn)
 
 	// Create a test server
 	socketFilenameUnderTest := filepath.Join(dirname, "socketUnderTest")
