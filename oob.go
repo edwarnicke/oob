@@ -31,18 +31,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-// UnixConnOob - net.UnixConn + SendFD and RecvFD methods for sending and receiving file descriptors
-type UnixConnOob struct {
+// UnixConn - net.UnixConn + SendFD and RecvFD methods for sending and receiving file descriptors
+type UnixConn struct {
 	*net.UnixConn
 }
 
 // New - wrap a *net.UnixConn providing it additional methods to SendFD and RecvFD
-func New(s *net.UnixConn) *UnixConnOob {
-	return &UnixConnOob{s}
+func New(s *net.UnixConn) *UnixConn {
+	return &UnixConn{s}
 }
 
 // SendFD - send the file descriptor fd to the process on the other end of the *net.UnixConn
-func (s *UnixConnOob) SendFD(fd uintptr) error {
+func (s *UnixConn) SendFD(fd uintptr) error {
 	socketFile, err := s.UnixConn.File()
 	if err != nil {
 		return err
@@ -58,7 +58,7 @@ func (s *UnixConnOob) SendFD(fd uintptr) error {
 // RecvFD - recv a file descriptor over a *net.UnixConn
 //       But you usually can't *link* it to another file location due to cross device errors
 // Note: If you  call s.RecvFD() when no fd is available, it will return error syscall.Errno == syscall.EINVAL
-func (s *UnixConnOob) RecvFD() (fd uintptr, err error) {
+func (s *UnixConn) RecvFD() (fd uintptr, err error) {
 	socketFile, err := s.UnixConn.File()
 	if err != nil {
 		return 0, err

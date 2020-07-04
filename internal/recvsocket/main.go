@@ -24,10 +24,8 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
-	"syscall"
 	"time"
 
 	"github.com/edwarnicke/oob"
@@ -38,22 +36,20 @@ func main() {
 	defer cancel()
 	conn, err := (&net.Dialer{}).DialContext(ctx, "unix", os.Args[1])
 	exitOnErr(err)
-	defer conn.Close()
 	o := oob.New(conn.(*net.UnixConn))
-	for i := 0; i < 2; i++ {
-		file, err := ioutil.TempFile(os.TempDir(), "oob-file")
-		exitOnErr(err)
-		defer file.Close()
-		fi, err := file.Stat()
-		exitOnErr(err)
-		inode := fi.Sys().(*syscall.Stat_t).Ino
-		buf := make([]byte, binary.Size(inode))
-		n := binary.PutVarint(buf, int64(inode))
-		b := buf[:n]
-		file.Write(b)
+	fd, err := o.RecvFD()
+	exitOnErr(err)
+	socketConn, err := oob.ToConn(fd)
+	exitOnErr(err)
+	defer func() { _ = socketConn.Close() }()
 
-		exitOnErr(o.SendFD(file.Fd()))
-	}
+	socketInode, err := oob.ToInode(fd)
+	exitOnErr(err)
+	buf := make([]byte, binary.MaxVarintLen64)
+	n := binary.PutVarint(buf, int64(socketInode))
+	b := buf[:n]
+	_, err = socketConn.Write(b)
+	exitOnErr(err)
 }
 
 func exitOnErr(err error) {
