@@ -133,9 +133,8 @@ func TestUnixsocket_SendSocket(t *testing.T) {
 	// Capture the incoming connection to the test server *from ourselves*
 	incomingCh := make(chan net.Conn)
 	go func(listenerUnderTest net.Listener) {
-		var incoming net.Conn
-		incoming, err = listenerUnderTest.Accept()
-		require.NoError(t, err)
+		incoming, incomingErr := listenerUnderTest.Accept()
+		require.NoError(t, incomingErr)
 		incomingCh <- incoming
 	}(listenerUnderTest)
 
