@@ -144,6 +144,16 @@ func TestUnixsocket_SendSocket(t *testing.T) {
 	fd, err := oob.ToFd(connUnderTest)
 	require.NoError(t, err)
 
+	// Get the inode of the socket
+	inode, err := oob.ToInode(fd)
+	require.NoError(t, err)
+
+	// Round trip through InodeToConn to test them as well
+	connUnderTest, err = oob.InodeToConn(inode)
+	require.NoError(t, err)
+	fd, err = oob.ToFd(connUnderTest)
+	require.NoError(t, err)
+
 	// Set that active socket to sendsocket
 	err = o.SendFD(fd)
 	require.NoError(t, err)
@@ -151,10 +161,6 @@ func TestUnixsocket_SendSocket(t *testing.T) {
 	// Get the incoming side of that connection
 	incoming := <-incomingCh
 	defer func() { assert.NoError(t, incoming.Close()) }()
-
-	// Get the inode of the socket
-	inode, err := oob.ToInode(fd)
-	require.NoError(t, err)
 
 	// Read the size of the inode from the socket
 	buf := make([]byte, binary.Size(inode))
