@@ -1,0 +1,161 @@
+---
+name: ci
+on: pull_request
+jobs:
+  yamllint:
+    name: yamllint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+      - name: Setup Python
+        uses: actions/setup-python@v1
+      - name: Install yamllint
+        run: pip install --user yamllint
+      - name: Run yamllint
+        run: ~/.local/bin/yamllint -c .yamllint.yml --strict .
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.4
+      - run: |
+          go build -race  ./...
+  build-win:
+    name: build-win
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.4
+      - run: |
+          go build -race  ./...
+  build-osx:
+    name: build-osx
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.4
+      - run: |
+          go build -race  ./...
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.4
+      - name: Run tests
+        run: |
+          go test -race -short ./...
+  test-win:
+    name: test-win
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.4
+      - name: Run tests
+        run: |
+          go test -race -short ./...
+  test-osx:
+    name: test-osx
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.4
+      - name: Run tests
+        run: |
+          go test -race -short ./...
+  golangci-lint:
+    name: golangci-lint
+    runs-on: ubuntu-latest
+    env:
+      GOLANGCI_LINT_CONTAINER: golangci/golangci-lint:v1.27.0
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+      - name: Pull golangci-lint docker container
+        run: docker pull ${GOLANGCI_LINT_CONTAINER}
+      - name: Run golangci-lint
+        run: docker run --rm -v $(pwd):/app -w /app ${GOLANGCI_LINT_CONTAINER} golangci-lint run
+
+  excludeFmtErrorf:
+    name: exclude fmt.Errorf
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Exclude fmt.Errorf
+        run: |
+          if grep -r --include=*.go --exclude=*.pb.go fmt.Errorf . ; then
+           echo "Please use errors.Errorf (or errors.New or errors.Wrap or errors.Wrapf) as appropriate rather than fmt.Errorf"
+           exit 1
+          fi
+
+  checkgomod:
+    name: check go.mod and go.sum
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.4
+      - run: go mod tidy
+      - name: Check for changes in go.mod or go.sum
+        run: |
+          git diff --name-only --exit-code go.mod || ( echo "Run go tidy" && false )
+          git diff --name-only --exit-code go.sum || ( echo "Run go tidy" && false )
+
+  gogenerate:
+    name: gogenerate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.4
+      - name: Generate files
+        run: go generate ./...
+      - name: Check for changes in generated code
+        run: |
+          git diff -- internal/imports/imports.go || ( echo "Rerun go generate ./... locally and resubmit" && false )
+
+  license:
+    name: license header check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: 1.13.4
+      - name: Install go-header
+        run: 'go get github.com/denis-tingajkin/go-header@v0.2.2'
+      - name: Run go-header
+        run: |
+          eval $(go env)
+          ${GOPATH}/bin/go-header
+  excludereplace:
+    name: Exclude Replace in go.mod
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v2
+      - name: Exclude replace in go.mod
+        run: |
+          grep ^replace go.mod || exit 0
+          exit 1
+  captureRunEnv:
+    name: Capture CI Run Env
+    runs-on: ubuntu-latest
+    steps:
+      - run: printenv
