@@ -24,7 +24,6 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
-	"net"
 	"os"
 	"time"
 
@@ -34,9 +33,9 @@ import (
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	conn, err := (&net.Dialer{}).DialContext(ctx, "unix", os.Args[1])
+	conn, err := (&oob.Dialer{}).DialContext(ctx, "unix", os.Args[1])
 	exitOnErr(err)
-	o := oob.New(conn.(*net.UnixConn))
+	o := conn.(*oob.UnixConn)
 	fd, err := o.RecvFD()
 	exitOnErr(err)
 	socketConn, err := oob.ToConn(fd)
