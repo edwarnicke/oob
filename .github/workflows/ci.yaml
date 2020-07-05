@@ -74,20 +74,6 @@ jobs:
           git diff --name-only --exit-code go.mod || ( echo "Run go tidy" && false )
           git diff --name-only --exit-code go.sum || ( echo "Run go tidy" && false )
 
-  gogenerate:
-    name: gogenerate
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v1
-        with:
-          go-version: 1.13.4
-      - name: Generate files
-        run: go generate ./...
-      - name: Check for changes in generated code
-        run: |
-          git diff -- internal/imports/imports.go || ( echo "Rerun go generate ./... locally and resubmit" && false )
-
   license:
     name: license header check
     runs-on: ubuntu-latest
@@ -102,18 +88,3 @@ jobs:
         run: |
           eval $(go env)
           ${GOPATH}/bin/go-header
-  excludereplace:
-    name: Exclude Replace in go.mod
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out the code
-        uses: actions/checkout@v2
-      - name: Exclude replace in go.mod
-        run: |
-          grep ^replace go.mod || exit 0
-          exit 1
-  captureRunEnv:
-    name: Capture CI Run Env
-    runs-on: ubuntu-latest
-    steps:
-      - run: printenv
