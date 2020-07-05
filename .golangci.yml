@@ -19,8 +19,6 @@ linters-settings:
           - (github.com/sirupsen/logrus.FieldLogger).Fatalf
   golint:
     min-confidence: 0.8
-  goimports:
-    local-prefixes: github.com/networkservicemesh/sdk-vppagent/
   gocyclo:
     min-complexity: 15
   maligned:

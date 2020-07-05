@@ -91,14 +91,34 @@ func ToConn(fd uintptr) (net.Conn, error) {
 	return net.FileConn(file)
 }
 
-// ToInode - inode of fd
-func ToInode(fd uintptr) (uint64, error) {
-	file := ToFile(fd)
-	fi, err := file.Stat()
-	if err != nil {
-		return 0, err
+// ToInode - inode of fd,*os.File, anything with a method File() (*os.File,error)
+func ToInode(thing interface{}) (uint64, error) {
+	file, ok := thing.(*os.File)
+	if ok {
+		fi, err := file.Stat()
+		if err != nil {
+			return 0, err
+		}
+		return fi.Sys().(*syscall.Stat_t).Ino, nil
 	}
-	return fi.Sys().(*syscall.Stat_t).Ino, nil
+	if fd, ok := thing.(uintptr); ok {
+		file = ToFile(fd)
+	}
+	if f, ok := thing.(filer); ok {
+		var err error
+		file, err = f.File()
+		if err != nil {
+			return 0, err
+		}
+	}
+	if file != nil {
+		fi, err := file.Stat()
+		if err != nil {
+			return 0, err
+		}
+		return fi.Sys().(*syscall.Stat_t).Ino, nil
+	}
+	return 0, errors.Errorf("Unable to extract an inode for %+v", thing)
 }
 
 type fder interface {
@@ -111,6 +131,9 @@ type filer interface {
 
 // ToFd - fd of a File or net.Conn if possible
 func ToFd(thing interface{}) (uintptr, error) {
+	if fd, ok := thing.(uintptr); ok {
+		return fd, nil
+	}
 	if fdthing, ok := thing.(fder); ok {
 		return fdthing.Fd(), nil
 	}
