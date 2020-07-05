@@ -18,7 +18,7 @@ func (d *Dialer) Dial(network, address string) (net.Conn, error) {
 	}
 	conn, err := dialer.Dial(network, address)
 	if unixConn, ok := conn.(*net.UnixConn); ok && err == nil {
-		return New(unixConn), nil
+		return NewUnixConn(unixConn), nil
 	}
 	return conn, err
 }
@@ -31,7 +31,7 @@ func (d *Dialer) DialContext(ctx context.Context, network, address string) (net.
 	}
 	conn, err := dialer.DialContext(ctx, network, address)
 	if unixConn, ok := conn.(*net.UnixConn); ok && err == nil {
-		return New(unixConn), nil
+		return NewUnixConn(unixConn), nil
 	}
 	return conn, err
 }

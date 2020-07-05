@@ -36,7 +36,7 @@ func Listen(network, address string) (net.Listener, error) {
 func (c *oobListener) Accept() (net.Conn, error) {
 	conn, err := c.Listener.Accept()
 	if unixConn, ok := conn.(*net.UnixConn); ok && err == nil {
-		return New(unixConn), nil
+		return NewUnixConn(unixConn), nil
 	}
 	return conn, err
 }
