@@ -1,3 +1,3 @@
 .idea
-./testdata/recvsocket/recvsocket
-./testdata/sendfile/sendfile
+internal/recvsocket/recvsocket
+internal/sendfile/sendfile
