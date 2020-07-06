@@ -6,10 +6,10 @@ adds two methods:
 
 In addition oob provides utility functions:
 
-* ```ToFd(interface{}) (fd uintptr,err error)``` - converts any interface which provides a File() *os.File or Fd() uintptr method and returns its fd.  Handy for *os.File, most implentations of net.Conn, etc
-* ```ToFile(fd uintptr) *os.File```- converts an fd to an *os.File with name ```fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), fd)```
-* ```ToConn(fd uintptr) (net.Conn,error)``` - converts an fd to a net.Conn
-* ```ToInode(fd uintptr) (inode uint64, err error)``` - returns the inode of the fd
+* ```ToFd(interface{}) (fd uintptr,err error)``` - converts anything which provides the SyscallConn() (syscall.RawConn, error) or inode its fd.
+* ```ToFile(interface{}) *os.File```- converts anything which provides the SyscallConn() (syscall.RawConn, error),fd, or inode its to an *os.File with name ```fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), fd)```
+* ```ToConn(interface{}) (net.Conn,error)``` - converts anything which provides the SyscallConn() (syscall.RawConn, error)fd, or inode its to a net.Conn
+* ```ToInode(interface{}) (inode uint64, err error)``` - converts anything which provides the SyscallConn() (syscall.RawConn, error) or fd to it inode
 
 # Compatibility and Dockerfile
 oob only works on linux.
