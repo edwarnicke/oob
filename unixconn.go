@@ -72,19 +72,3 @@ func (s *UnixConn) RecvFD() (fd uintptr, err error) {
 	}
 	return uintptr(fds[0]), nil
 }
-
-// FDSender - Type for that which can send an FD
-type FDSender interface {
-	SendFD(fd uintptr) error
-}
-
-// FDReceiver - Type for that which can recv and FD
-type FDReceiver interface {
-	RecvFD() (fd uintptr, err error)
-}
-
-// FDSenderReceiver - Type for that which can send and recv an FD
-type FDSenderReceiver interface {
-	FDSender
-	FDReceiver
-}

@@ -27,6 +27,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/edwarnicke/oob"
 )
 
@@ -40,6 +42,9 @@ func main() {
 	exitOnErr(err)
 	socketConn, err := oob.ToConn(fd)
 	exitOnErr(err)
+	if socketConn == nil {
+		exitOnErr(errors.Errorf("fd %d is not a net.Conn", fd))
+	}
 	defer func() { _ = socketConn.Close() }()
 
 	socketInode, err := oob.ToInode(fd)
