@@ -68,13 +68,11 @@ func TestUnixsocket_RecvFile(t *testing.T) {
 	defer func() { assert.NoError(t, conn.Close()) }()
 	o := conn.(*oob.UnixConn)
 	for i := 0; i < 3; i++ {
-		fd, err := o.RecvFD()
+		file, err := o.RecvFile()
 		// Only 2 file descriptors are sent, so on the third, we expect EINVAL
 		if i == 2 && err != nil && err.(syscall.Errno) == syscall.EINVAL {
 			continue
 		}
-		require.NoError(t, err)
-		file, err := oob.ToFile(fd)
 		require.NoError(t, err)
 		require.NotNil(t, file)
 		fi, err := os.Stat(file.Name())
@@ -86,7 +84,7 @@ func TestUnixsocket_RecvFile(t *testing.T) {
 		x, n := binary.Varint(buf)
 		assert.EqualValues(t, n, fi.Size())
 
-		inode, err := oob.ToInode(fd)
+		inode, err := oob.ToInode(file)
 		require.NoError(t, err)
 		assert.EqualValues(t, inode, x)
 	}

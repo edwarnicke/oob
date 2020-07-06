@@ -21,6 +21,7 @@ package oob
 
 import (
 	"net"
+	"os"
 	"syscall"
 )
 
@@ -48,8 +49,17 @@ func (s *UnixConn) SendFD(fd uintptr) error {
 	return nil
 }
 
+// SendFile - send the *os.File to the process on the other end of the *net.UnixConn
+func (s *UnixConn) SendFile(file *os.File) error {
+	fd, err := ToFd(file)
+	if err != nil {
+		return err
+	}
+	return s.SendFD(fd)
+}
+
 // RecvFD - recv a file descriptor over a *net.UnixConn
-//       But you usually can't *link* it to another file location due to cross device errors
+// Note: You usually can't os.Link it to another file location due to cross device errors
 // Note: If you  call s.RecvFD() when no fd is available, it will return error syscall.Errno == syscall.EINVAL
 func (s *UnixConn) RecvFD() (fd uintptr, err error) {
 	socketFile, err := s.UnixConn.File()
@@ -71,4 +81,19 @@ func (s *UnixConn) RecvFD() (fd uintptr, err error) {
 		return 0, err
 	}
 	return uintptr(fds[0]), nil
+}
+
+// RecvFile - recv an *os.File over a *net.UnixConn
+// Note: You usually can't os.Link it to another file location due to cross device errors
+// Note: If you  call s.RecvFile() when no fd is available, it will return error syscall.Errno == syscall.EINVAL
+func (s *UnixConn) RecvFile() (*os.File, error) {
+	fd, err := s.RecvFD()
+	if err != nil {
+		return nil, err
+	}
+	file, err := ToFile(fd)
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
 }
