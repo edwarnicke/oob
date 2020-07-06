@@ -27,7 +27,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// ToFile - *os.File from fd
+// ToFile - *os.File from  anything which provides the SyscallConn() (syscall.RawConn, error), fd (uintptr), or inode (uint64)
+//          will return an error if there is no open fd or inode matching if requesting for fd or inode
 func ToFile(thing interface{}) (*os.File, error) {
 	// Is it a file?
 	if file, ok := thing.(*os.File); ok {
@@ -41,7 +42,8 @@ func ToFile(thing interface{}) (*os.File, error) {
 	return nil, errors.Errorf("cannot create *os.File for %+v", thing)
 }
 
-// ToConn - net.Conn from fd
+// ToConn - net.Conn from  anything which provides the SyscallConn() (syscall.RawConn, error), fd (uintptr), or inode (uint64)
+//          will return an error if there is no open fd or inode matching if requesting for fd or inode
 func ToConn(thing interface{}) (net.Conn, error) {
 	if conn, ok := thing.(net.Conn); ok {
 		return conn, nil
@@ -61,7 +63,8 @@ type syscallconner interface {
 	SyscallConn() (syscall.RawConn, error)
 }
 
-// ToFd - fd of a File or net.Conn if possible
+// ToFd - fd (file descriptor) from  anything which provides the SyscallConn() (syscall.RawConn, error), fd (uintptr), or inode (uint64)
+//        will return an error if there is no open fd or inode matching if requesting for fd or inode
 func ToFd(thing interface{}) (uintptr, error) {
 	// Is it a uintptr (ie, a fd)
 	if fd, ok := thing.(uintptr); ok {
@@ -114,7 +117,8 @@ func ToFd(thing interface{}) (uintptr, error) {
 	return 0, errors.Errorf("cannot extract fd from %+v", thing)
 }
 
-// ToInode - inode of fd,*os.File, anything with a method File() (*os.File,error)
+// ToInode - inode of anything which provides the SyscallConn() (syscall.RawConn, error), fd (uintptr), or inode (uint64)
+//           will return an error if there is no open fd or inode matching if requesting for fd or inode
 func ToInode(thing interface{}) (uint64, error) {
 	// Is it already a uint64 and thus presumably an inode?
 	if inode, ok := thing.(uint64); ok {
