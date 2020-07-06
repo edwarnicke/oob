@@ -74,7 +74,9 @@ func TestUnixsocket_RecvFile(t *testing.T) {
 			continue
 		}
 		require.NoError(t, err)
-		file := oob.ToFile(fd)
+		file, err := oob.ToFile(fd)
+		require.NoError(t, err)
+		require.NotNil(t, file)
 		fi, err := os.Stat(file.Name())
 		require.NoError(t, err)
 		buf := make([]byte, fi.Size())
@@ -135,7 +137,7 @@ func TestUnixsocket_SendSocket(t *testing.T) {
 	require.NoError(t, err)
 
 	// Capture the incoming connection to the test server *from ourselves*
-	incomingCh := make(chan net.Conn)
+	incomingCh := make(chan net.Conn, 1)
 	go func(listenerUnderTest net.Listener) {
 		incoming, incomingErr := listenerUnderTest.Accept()
 		require.NoError(t, incomingErr)
@@ -153,7 +155,7 @@ func TestUnixsocket_SendSocket(t *testing.T) {
 	require.NoError(t, err)
 
 	// Round trip through InodeToConn to test them as well
-	connUnderTest, err = oob.InodeToConn(inode)
+	connUnderTest, err = oob.ToConn(inode)
 	require.NoError(t, err)
 	fd, err = oob.ToFd(connUnderTest)
 	require.NoError(t, err)
