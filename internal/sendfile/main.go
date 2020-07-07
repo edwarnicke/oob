@@ -52,7 +52,7 @@ func main() {
 		_, err = file.Write(b)
 		exitOnErr(err)
 
-		exitOnErr(o.SendFD(file.Fd()))
+		exitOnErr(o.SendFile(file))
 	}
 }
 
